@@ -1,5 +1,6 @@
 import { TsConfig } from './src/types';
 import path from 'path';
+import fs from 'fs';
 
 /**
  * Asset Link TypeScript configuration with custom callbacks
@@ -7,7 +8,7 @@ import path from 'path';
 const config: TsConfig = {
   publicDir: './public',
   outputFile: './src/generated/assetPaths.ts',
-  excludePatterns: ['**/.*', '**/node_modules/**'],
+  excludePatterns: ['**/node_modules/**'],
   groupByDirectory: true,
   
   /**
@@ -15,6 +16,7 @@ const config: TsConfig = {
    * This example creates PascalCase names and adds the file type as a prefix
    */
   pathToVariableName: (filePath, relativePath) => {
+    console.log(`Processing file for variable name: ${filePath} (${relativePath})`);
     const fileName = path.basename(relativePath);
     const ext = path.extname(fileName).slice(1); // Get extension without the dot
     const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
@@ -36,6 +38,7 @@ const config: TsConfig = {
    */
   transformPathValue: (filePath, relativePath) => {
     const ext = path.extname(relativePath).toLowerCase();
+    console.log(`Transform path value for: ${filePath}, extension: ${ext}`);
     
     // Check if it's an image file
     if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
@@ -47,6 +50,12 @@ const config: TsConfig = {
       return `/documents/${relativePath}`;
     }
     
+    // JSON files special handling
+    if (ext === '.json') {
+      console.log(`JSON file detected: ${relativePath}`);
+      return `/data/${relativePath}`;
+    }
+    
     // Default path
     return `/${relativePath}`;
   },
@@ -56,7 +65,11 @@ const config: TsConfig = {
    * This example only includes certain file types
    */
   shouldIncludeFile: (filePath, relativePath) => {
+    console.log(`Checking file for inclusion: ${filePath}`);
+    console.log(`File exists: ${fs.existsSync(filePath)}`);
+    
     const ext = path.extname(relativePath).toLowerCase();
+    console.log(`File extension: ${ext}`);
     
     // Include only specific file types
     const allowedExtensions = [
@@ -65,8 +78,25 @@ const config: TsConfig = {
       '.json', '.xml'
     ];
     
-    return allowedExtensions.includes(ext);
+    const shouldInclude = allowedExtensions.includes(ext);
+    console.log(`Should include ${filePath}: ${shouldInclude} (extension: ${ext})`);
+    return shouldInclude;
   }
 };
+
+// Print the public directory contents at startup
+try {
+  const publicDir = path.resolve(process.cwd(), './public');
+  console.log(`Public directory: ${publicDir}`);
+  console.log(`Public directory exists: ${fs.existsSync(publicDir)}`);
+  if (fs.existsSync(publicDir)) {
+    console.log('Files in public directory:');
+    fs.readdirSync(publicDir).forEach(file => {
+      console.log(` - ${file}`);
+    });
+  }
+} catch (error) {
+  console.error('Error reading public directory:', error);
+}
 
 export default config;

@@ -1,5 +1,6 @@
 import path from 'path';
 import { Config, isTsConfig } from './types';
+import fs from 'fs';
 
 interface AssetGroup {
   [key: string]: string | AssetGroup;
@@ -9,9 +10,16 @@ interface AssetGroup {
  * Gets the relative path from a file path
  */
 function getRelativePath(filePath: string, config: Config): string {
-  const normalizedPath = filePath.replace(/\\/g, '/');
-  const publicDirPattern = new RegExp(`^${config.publicDir.replace(/\\/g, '/').replace(/^\.\//, '')}/?`);
-  return normalizedPath.replace(publicDirPattern, '');
+  // Resolve both paths to absolute paths
+  const absolutePublicDir = path.resolve(process.cwd(), config.publicDir);
+  const absoluteFilePath = path.resolve(process.cwd(), filePath);
+  
+  // Get the relative path from public dir to the file
+  const relativePath = path.relative(absolutePublicDir, absoluteFilePath)
+    .replace(/\\/g, '/'); // Normalize path separators
+    
+  console.log(`getRelativePath: ${filePath} -> ${relativePath}`);
+  return relativePath;
 }
 
 /**
@@ -91,10 +99,13 @@ function shouldIncludeFile(filePath: string, config: Config): boolean {
   const relativePath = getRelativePath(filePath, config);
   
   // Check exclude patterns first (for both config types)
+  console.log('excludePatterns: ', config.excludePatterns);
   if (config.excludePatterns.some(pattern => 
     new RegExp(pattern.replace(/\*/g, '.*')).test(relativePath))) {
     return false;
   }
+
+  console.log('Config: ', isTsConfig(config) && config.shouldIncludeFile ? "has shouldIncludeFile" : "does not have shouldIncludeFile");
   
   // If using TS config with custom inclusion function, use it
   if (isTsConfig(config) && config.shouldIncludeFile) {
@@ -110,28 +121,37 @@ function shouldIncludeFile(filePath: string, config: Config): boolean {
  */
 function groupAssetsByDirectory(files: string[], config: Config): AssetGroup {
   const result: AssetGroup = {};
+  console.log(`groupAssetsByDirectory: Processing ${files.length} files`);
   
   files.forEach(file => {
+    console.log(`\nProcessing file: ${file}`);
     // Check if file should be included
     if (!shouldIncludeFile(file, config)) {
+      console.log(`Skipping file: ${file} - excluded by shouldIncludeFile`);
       return;
     }
     
     // Get relative path
     const relativePath = getRelativePath(file, config);
+    console.log(`File relative path: ${relativePath}`);
     
     if (config.groupByDirectory) {
       // Handle directory structure
       const parts = relativePath.split('/');
       const fileName = parts.pop() || '';
+      console.log(`File name: ${fileName}, Path parts: ${JSON.stringify(parts)}`);
       
       // Build the nested structure
       let current = result;
       for (const part of parts) {
-        if (!part) continue;
+        if (!part) {
+          console.log(`Skipping empty part`);
+          continue;
+        }
         
         // Convert directory name to proper case
         const dirVarName = pathToVariableName(part, config);
+        console.log(`Directory variable name: ${dirVarName}`);
         
         if (!current[dirVarName]) {
           current[dirVarName] = {};
@@ -141,10 +161,12 @@ function groupAssetsByDirectory(files: string[], config: Config): AssetGroup {
       
       // Add the file at the appropriate level
       const varName = pathToVariableName(file, config);
+      console.log(`Adding variable ${varName} = ${transformPathValue(file, config)}`);
       current[varName] = transformPathValue(file, config);
     } else {
       // Flat structure - just use the file name with transformed path value
       const varName = pathToVariableName(file, config);
+      console.log(`Adding variable ${varName} = ${transformPathValue(file, config)} (flat structure)`);
       result[varName] = transformPathValue(file, config);
     }
   });

@@ -41,7 +41,7 @@ import path from 'path';
 const config: TsConfig = {
   publicDir: './public',
   outputFile: './src/generated/assetPaths.ts',
-  excludePatterns: ['**/.*', '**/node_modules/**'],
+  excludePatterns: ['**/node_modules/**'],
   groupByDirectory: true,
   
   // Custom function to convert file paths to variable names
@@ -132,7 +132,19 @@ async function generateAssetFiles(config: any): Promise<void> {
     const publicDirAbs = path.resolve(process.cwd(), config.publicDir);
     console.log(`Scanning for assets in: ${publicDirAbs}`);
     
+    // Check if directory exists
+    if (!fs.existsSync(publicDirAbs)) {
+      console.error(`Public directory does not exist: ${publicDirAbs}`);
+      return;
+    }
+    
+    console.log('Files in public directory before glob:');
+    fs.readdirSync(publicDirAbs).forEach(file => {
+      console.log(` - ${file}`);
+    });
+    
     // Find all files in the public directory matching the patterns
+    console.log(`Searching for files with glob: ${publicDirAbs}/**/*`);
     const files = await glob(`${publicDirAbs}/**/*`, {
       ignore: config.excludePatterns.map((pattern: string) => 
         `${publicDirAbs}/${pattern.replace(/^\*\*\//, '')}`
@@ -142,7 +154,16 @@ async function generateAssetFiles(config: any): Promise<void> {
     
     console.log(`Found ${files.length} files to process`);
     if (files.length > 0) {
-      console.log(`Sample file: ${files[0]}`);
+      console.log('Files found by glob:');
+      files.forEach(file => console.log(` - ${file}`));
+    } else {
+      console.log(`No files found in ${publicDirAbs}. Make sure your public directory contains assets.`);
+      // If no files found, create a test file to verify path handling
+      const testFile = path.join(publicDirAbs, 'test-auto.json');
+      console.log(`Creating test file at: ${testFile}`);
+      fs.writeFileSync(testFile, JSON.stringify({ test: "Test data" }, null, 2));
+      console.log(`Test file created. Please run the command again.`);
+      return;
     }
     
     // Generate TypeScript code from the assets
@@ -158,6 +179,11 @@ async function generateAssetFiles(config: any): Promise<void> {
     
     fs.writeFileSync(outputFileAbs, generatedCode);
     console.log(`Generated asset paths file at: ${outputFileAbs}`);
+    console.log(`Generated content length: ${generatedCode.length} characters`);
+    
+    // Log the first part of the generated content
+    const previewLines = generatedCode.split('\n').slice(0, 15).join('\n');
+    console.log(`Preview of generated content:\n${previewLines}`);
   } catch (error) {
     console.error('Error generating asset files:', error);
   }
