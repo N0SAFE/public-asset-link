@@ -83,5 +83,8 @@ export type Config = JsonConfig | TsConfig;
  * Type guard to check if a config is a TypeScript config
  */
 export function isTsConfig(config: Config): config is TsConfig {
-  return 'pathToVariableName' in config && typeof config.pathToVariableName === 'function';
+  return config !== null 
+    && typeof config === 'object'
+    && 'pathToVariableName' in config 
+    && typeof config.pathToVariableName === 'function';
 }

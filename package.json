@@ -1,27 +1,38 @@
 {
-  "name": "public-asset-link",
+  "name": "asset-link",
   "version": "1.0.0",
   "description": "A CLI tool to transform NextJS public assets to TypeScript variables",
   "main": "dist/index.js",
   "bin": {
-    "public-asset-link": "./dist/index.js"
+    "asset-link": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "watch": "ts-node src/index.ts watch",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "deploy": "npm deploy",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
   },
-  "keywords": ["cli", "nextjs", "assets", "typescript"],
+  "keywords": [
+    "cli",
+    "nextjs",
+    "assets",
+    "typescript"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.13.13",
+    "@vitest/coverage-v8": "^3.0.9",
     "chokidar": "^4.0.3",
     "commander": "^13.1.0",
     "glob": "^11.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
   }
 }
