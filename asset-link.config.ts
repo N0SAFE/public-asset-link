@@ -8,7 +8,7 @@ import fs from 'fs';
 const config: TsConfig = {
   publicDir: './public',
   outputFile: './src/generated/assetPaths.ts',
-  excludePatterns: ['**/node_modules/**'],
+  excludePatterns: ['**/.*', '**/node_modules/**'],
   groupByDirectory: true,
   
   /**

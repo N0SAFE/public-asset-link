@@ -41,7 +41,7 @@ import path from 'path';
 const config: TsConfig = {
   publicDir: './public',
   outputFile: './src/generated/assetPaths.ts',
-  excludePatterns: ['**/node_modules/**'],
+  excludePatterns: ['**/.*', '**/node_modules/**'],
   groupByDirectory: true,
   
   // Custom function to convert file paths to variable names
@@ -146,9 +146,14 @@ async function generateAssetFiles(config: any): Promise<void> {
     // Find all files in the public directory matching the patterns
     console.log(`Searching for files with glob: ${publicDirAbs}/**/*`);
     const files = await glob(`${publicDirAbs}/**/*`, {
-      ignore: config.excludePatterns.map((pattern: string) => 
-        `${publicDirAbs}/${pattern.replace(/^\*\*\//, '')}`
-      ),
+      ignore: config.excludePatterns.map((pattern: string) => {
+        // Keep the pattern as is if it starts with **/.
+        if (pattern.startsWith('**/.')) {
+          return path.join(publicDirAbs, pattern);
+        }
+        // Otherwise remove the **/ prefix as before
+        return path.join(publicDirAbs, pattern.replace(/^\*\*\//, ''));
+      }),
       nodir: true
     });
     

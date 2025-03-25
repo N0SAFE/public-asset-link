@@ -2,6 +2,7 @@
   "publicDir": "./public",
   "outputFile": "./src/generated/assetPaths.ts",
   "excludePatterns": [
+    "**/.*",
     "**/node_modules/**"
   ],
   "namingStrategy": "camelCase",
